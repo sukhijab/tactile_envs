@@ -80,10 +80,17 @@ class InsertionEnv(gym.Env):
         self.holders = holders
         self.objects = objects
 
+        
+        
+        self.sim = mujoco.MjModel.from_xml_string(self.xml_content)
+        self.mj_data = mujoco.MjData(self.sim)
+        if self.multiccd:
+            self.sim.opt.enableflags |= mujoco.mjtEnableBit.mjENBL_MULTICCD
+
         print("state_type: ", self.state_type)
 
         if self.state_type == 'privileged':
-            self.curr_obs = {'state': np.zeros(8)}
+            self.curr_obs = {'state': np.append(self.mj_data.qpos.copy(),[0, 0])}
         elif self.state_type == 'vision':
             self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3))}
         elif self.state_type == 'touch':
@@ -92,12 +99,6 @@ class InsertionEnv(gym.Env):
             self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3)), 'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
         else:
             raise ValueError("Invalid state type")
-        
-        self.sim = mujoco.MjModel.from_xml_string(self.xml_content)
-        self.mj_data = mujoco.MjData(self.sim)
-        if self.multiccd:
-            self.sim.opt.enableflags |= mujoco.mjtEnableBit.mjENBL_MULTICCD
-
         
 
         self.init_z = self.mj_data.qpos[-5]
