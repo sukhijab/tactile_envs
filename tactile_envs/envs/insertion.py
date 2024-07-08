@@ -375,7 +375,7 @@ class InsertionEnv(gym.Env):
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
             self.curr_obs = {'tactile': tactiles}
         elif self.state_type == 'privileged':
-            self.curr_obs = np.append(self.mj_data.qpos.copy(),[self.offset_x,self.offset_y])
+            self.curr_obs = {'state': np.append(self.mj_data.qpos.copy(),[self.offset_x,self.offset_y])}
         
         info = {'id': np.array([self.id])}
 
@@ -458,7 +458,7 @@ class InsertionEnv(gym.Env):
             self.curr_obs = {'tactile': tactiles}
             info = {'id': np.array([self.id])}
         elif self.state_type == 'privileged':
-            self.curr_obs = np.append(self.mj_data.qpos.copy(),[self.offset_x,self.offset_y])
+            self.curr_obs = {'state': np.append(self.mj_data.qpos.copy(),[self.offset_x,self.offset_y])}
             info = {'id': np.array([self.id])}
 
         done = np.sqrt(delta_x**2 + delta_y**2 + delta_z**2) < 4e-3
