@@ -104,14 +104,14 @@ class InsertionEnv(gym.Env):
             self.curr_obs = {'state': np.zeros(40)}
         elif self.state_type == 'vision':
             if self.compress_img:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3, dtype=np.uint8))}
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3), dtype=np.uint8)}
             else:
                 self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3))}
         elif self.state_type == 'touch':
             self.curr_obs = {'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
         elif self.state_type == 'vision_and_touch':
             if self.compress_img:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3, dtype=np.uint8)), 
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3), dtype=np.uint8),
                 'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
             else:
                 self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3)), 
