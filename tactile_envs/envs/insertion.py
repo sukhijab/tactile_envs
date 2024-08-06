@@ -17,9 +17,9 @@ def convert_observation_to_space(observation, compress_img: bool = False):
     for key in observation.keys():
         if key == 'image':
             if compress_img:
-                space.spaces[key] = spaces.Box(low = 0, high = 1, shape = observation[key].shape, dtype = np.uint8)
+                space.spaces[key] = spaces.Box(low = 0, high = 255, shape = observation[key].shape, dtype = np.uint8)
             else:
-                space.spaces[key] = spaces.Box(low = 0, high = 255, shape = observation[key].shape, dtype = np.float64)
+                space.spaces[key] = spaces.Box(low = 0, high = 1, shape = observation[key].shape, dtype = np.float64)
         elif key == 'tactile' or key == 'state':
             space.spaces[key] = spaces.Box(low = -float('inf'), high = float('inf'), shape = observation[key].shape, dtype = np.float64)
         
