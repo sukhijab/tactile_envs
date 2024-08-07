@@ -2,7 +2,7 @@ import os
 import cv2 
 
 import gymnasium as gym
-
+import time
 import mujoco
 
 import numpy as np
@@ -24,6 +24,7 @@ def convert_observation_to_space(observation, compress_img: bool = False):
             space.spaces[key] = spaces.Box(low = -float('inf'), high = float('inf'), shape = observation[key].shape, dtype = np.float64)
         
     return space
+
 
 class InsertionEnv(gym.Env):
 
@@ -119,12 +120,12 @@ class InsertionEnv(gym.Env):
         else:
             raise ValueError("Invalid state type")
         
-        self.sim = mujoco.MjModel.from_xml_string(self.xml_content)
+        self.sim = self.from_xml_string()
         self.mj_data = mujoco.MjData(self.sim)
         if self.multiccd:
             self.sim.opt.enableflags |= mujoco.mjtEnableBit.mjENBL_MULTICCD
 
-        
+
 
         self.init_z = self.mj_data.qpos[-5]
 
@@ -155,6 +156,21 @@ class InsertionEnv(gym.Env):
         self.action_scale = self.action_scale[self.action_mask]
         
         self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
+
+    def from_xml_string(self):
+        timeout = 120
+        start_time = time.time()
+        while True:
+            try:
+                sim = mujoco.MjModel.from_xml_string(self.xml_content)
+                break
+            except Exception as e:
+                elapsed_time = time.time() - start_time
+                if elapsed_time >= timeout:
+                    raise AssertionError(f"Failed to initialize simulation within {timeout} seconds: {e}")
+                time.sleep(1)  # Wait for 1 second before retrying
+                print(elapsed_time)
+        return sim
 
     def update_include_path(self):
         
@@ -371,7 +387,7 @@ class InsertionEnv(gym.Env):
         
         # Reload XML (and update robot)
         self.edit_xml()
-        self.sim = mujoco.MjModel.from_xml_string(self.xml_content)
+        self.sim = self.from_xml_string()
         
         self.mj_data = mujoco.MjData(self.sim)
         if self.multiccd:
