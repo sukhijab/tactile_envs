@@ -77,8 +77,8 @@ class InsertionEnv(gym.Env):
         self.current_dir = os.path.join(Path(__file__).parent.parent.absolute(), 'assets/insertion')
         with open(self.model_path,"r") as f:
             self.xml_content = f.read()
-            self.update_include_path()
-            self.xml_content_reference = self.xml_content
+        self.update_include_path()
+        self.xml_content_reference = self.xml_content
 
         self.multiccd = multiccd
 
