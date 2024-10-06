@@ -31,7 +31,7 @@ class InsertionEnv(gym.Env):
     def __init__(self, no_rotation=True, 
         no_gripping=True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True, 
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
-        compress_img: bool = False,
+        compress_img: bool = True,
         objects = ["square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus"],
         holders = ["holder1", "holder2", "holder3"]):
 
@@ -109,14 +109,14 @@ class InsertionEnv(gym.Env):
             else:
                 self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3))}
         elif self.state_type == 'touch':
-            self.curr_obs = {'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
+            self.curr_obs = {'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
         elif self.state_type == 'vision_and_touch':
             if self.compress_img:
                 self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3), dtype=np.uint8),
-                'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
+                'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
             else:
                 self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3)), 
-                'tactile': np.zeros((2 * self.tactile_comps, self.tactile_rows, self.tactile_cols))}
+                'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
         else:
             raise ValueError("Invalid state type")
         
@@ -407,7 +407,7 @@ class InsertionEnv(gym.Env):
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
             img = self.render()
-            self.curr_obs = {'image': img, 'tactile': tactiles}
+            self.curr_obs = {'image': img, 'tactile': np.moveaxis(tactiles, 0, -1)}
         elif self.state_type == 'vision':
             img = self.render()
             self.curr_obs = {'image': img}
@@ -419,7 +419,7 @@ class InsertionEnv(gym.Env):
             tactiles = np.concatenate((tactiles_right, tactiles_left), axis=0)
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
-            self.curr_obs = {'tactile': tactiles}
+            self.curr_obs = {'tactile': np.moveaxis(tactiles, 0, -1)}
         elif self.state_type == 'privileged':
             self.curr_obs = {'state': np.concatenate((self.mj_data.qpos.copy(), self.mj_data.qvel.copy(), [self.offset_x,self.offset_y,self.offset_yaw]))}
         
@@ -489,7 +489,7 @@ class InsertionEnv(gym.Env):
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
             img = self.render()
-            self.curr_obs = {'image': img, 'tactile': tactiles}
+            self.curr_obs = {'image': img, 'tactile': np.moveaxis(tactiles, 0, -1)}
             info = {'id': np.array([self.id])}
         elif self.state_type == 'vision':
             img = self.render()
@@ -503,7 +503,7 @@ class InsertionEnv(gym.Env):
             tactiles = np.concatenate((tactiles_right, tactiles_left), axis=0)
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
-            self.curr_obs = {'tactile': tactiles}
+            self.curr_obs = {'tactile': np.moveaxis(tactiles, 0, -1)}
             info = {'id': np.array([self.id])}
         elif self.state_type == 'privileged':
             self.curr_obs = {'state': np.concatenate((self.mj_data.qpos.copy(), self.mj_data.qvel.copy(), [self.offset_x,self.offset_y,self.offset_yaw]))}
