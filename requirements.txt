@@ -24,8 +24,3 @@ python-dateutil==2.8.2
 six==1.16.0
 typing_extensions==4.9.0
 zipp==3.17.0
-
---editable tactile_envs/envs/robosuite
---editable tactile_envs/envs/Gymnasium-Robotics
-
---editable .
