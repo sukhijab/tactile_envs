@@ -29,7 +29,7 @@ def convert_observation_to_space(observation, compress_img: bool = False):
 class InsertionEnv(gym.Env):
 
     def __init__(self, no_rotation=True, 
-        no_gripping=True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True, 
+        no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True,
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
         objects = ["square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus"],
@@ -131,6 +131,7 @@ class InsertionEnv(gym.Env):
 
         self.adaptive_gripping = not no_gripping
         self.with_rotation = not no_rotation
+        self.start_grasped = start_grasped
 
         self.camera_idx = camera_idx        
         
@@ -367,6 +368,43 @@ class InsertionEnv(gym.Env):
         if pos[2] < (cruise_height - gripping_height)/2:
             print('Failed to grasp')
 
+        if not self.start_grasped:
+            for i in range(steps_per_phase):  # go down
+                self.mj_data.ctrl[:3] = [rand_x, rand_y, gripping_height]
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+                if show_full:
+                    self.renderer.update_scene(self.mj_data, camera=0)
+                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
+                    cv2.imshow('img', img)
+                    cv2.waitKey(1)
+
+            for i in range(steps_per_phase):  # open gripper
+                self.mj_data.ctrl[-1] = 0
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+                if show_full:
+                    self.renderer.update_scene(self.mj_data, camera=0)
+                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
+                    cv2.imshow('img', img)
+                    cv2.waitKey(1)
+
+            for i in range(steps_per_phase):  # move up
+                self.mj_data.ctrl[:3] = [rand_x, rand_y, cruise_height]
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+                if show_full:
+                    self.renderer.update_scene(self.mj_data, camera=0)
+                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
+                    cv2.imshow('img', img)
+                    cv2.waitKey(1)
+
+            for i in range(steps_per_phase):  # move to zero
+                self.mj_data.ctrl[:3] = [0, 0, cruise_height]
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+                if show_full:
+                    self.renderer.update_scene(self.mj_data, camera=0)
+                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
+                    cv2.imshow('img', img)
+                    cv2.waitKey(1)
+
     def _get_obs(self):
         return self.curr_obs
     
@@ -423,7 +461,10 @@ class InsertionEnv(gym.Env):
         elif self.state_type == 'privileged':
             self.curr_obs = {'state': np.concatenate((self.mj_data.qpos.copy(), self.mj_data.qvel.copy(), [self.offset_x,self.offset_y,self.offset_yaw]))}
         
-        info = {'id': np.array([self.id])}
+        info = {'id': np.array([self.id]),
+                'is_success': False,
+                'grasped': self.start_grasped,
+                }
 
         return self._get_obs(), info
 
@@ -446,6 +487,7 @@ class InsertionEnv(gym.Env):
             return img / 255
 
     def step(self, u):
+        grasped = self.verify_grasp()
 
         action = u
         action = np.clip(u, -1., 1.)
@@ -511,6 +553,7 @@ class InsertionEnv(gym.Env):
 
         done = np.sqrt(delta_x**2 + delta_y**2 + delta_z**2) < 4e-3
         info['is_success'] = done
+        info['grasped'] = grasped
 
         if done:
             reward = 1000
@@ -518,4 +561,19 @@ class InsertionEnv(gym.Env):
         obs = self._get_obs()
 
         return obs, reward, done, False, info
+
+    def verify_grasp(self):
+        grasped = False
+        for pair in self.mj_data.contact.geom:
+            pair_0 = self.sim.geom(pair[0]).name
+            pair_1 = self.sim.geom(pair[1]).name
+            if pair_0 in ["holder_collision", "peg_collsion"] and (
+                    pair_1.startswith("lpad") or pair_1.startswith("rpad")):
+                grasped = True
+                break
+            elif pair_1 in ["holder_collision", "peg_collsion"] and (
+                    pair_0.startswith("lpad") or pair_0.startswith("rpad")):
+                grasped = True
+                break
+        return grasped
         
