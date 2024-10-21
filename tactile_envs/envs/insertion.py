@@ -32,6 +32,7 @@ class InsertionEnv(gym.Env):
         no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True,
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
+        num_init_grasp_steps: int = 0,
         objects = ["square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus"],
         holders = ["holder1", "holder2", "holder3"]):
 
@@ -132,6 +133,8 @@ class InsertionEnv(gym.Env):
         self.adaptive_gripping = not no_gripping
         self.with_rotation = not no_rotation
         self.start_grasped = start_grasped
+        self.num_init_grasp_steps = num_init_grasp_steps
+        self.num_env_steps = 0
 
         self.camera_idx = camera_idx        
         
@@ -186,6 +189,15 @@ class InsertionEnv(gym.Env):
         file_start_idx = file_idx + len('meshdir="')
         self.xml_content = self.xml_content[:file_start_idx] + self.current_dir + '/' + self.xml_content[file_start_idx:]
 
+    @property
+    def grasp_object(self):
+        if self.start_grasped:
+            return True
+        else:
+            if self.num_env_steps >= self.num_init_grasp_steps:
+                return False
+            else:
+                return True
 
     def edit_xml(self):
         
@@ -368,7 +380,7 @@ class InsertionEnv(gym.Env):
         if pos[2] < (cruise_height - gripping_height)/2:
             print('Failed to grasp')
 
-        if not self.start_grasped:
+        if not self.grasp_object:
             for i in range(steps_per_phase):  # go down
                 self.mj_data.ctrl[:3] = [rand_x, rand_y, gripping_height]
                 mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
@@ -463,7 +475,7 @@ class InsertionEnv(gym.Env):
         
         info = {'id': np.array([self.id]),
                 'is_success': False,
-                'grasped': self.start_grasped,
+                'grasped': self.grasp_object,
                 }
 
         return self._get_obs(), info
@@ -487,6 +499,7 @@ class InsertionEnv(gym.Env):
             return img / 255
 
     def step(self, u):
+        self.num_env_steps += 1
         grasped = self.verify_grasp()
 
         action = u
