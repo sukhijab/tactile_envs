@@ -474,8 +474,8 @@ class InsertionEnv(gym.Env):
             self.curr_obs = {'state': np.concatenate((self.mj_data.qpos.copy(), self.mj_data.qvel.copy(), [self.offset_x,self.offset_y,self.offset_yaw]))}
         
         info = {'id': np.array([self.id]),
-                'is_success': False,
-                'grasped': self.grasp_object,
+                'is_success': int(False),
+                'grasped': int(self.grasp_object),
                 }
 
         return self._get_obs(), info
@@ -565,8 +565,8 @@ class InsertionEnv(gym.Env):
             info = {'id': np.array([self.id])}
 
         done = np.sqrt(delta_x**2 + delta_y**2 + delta_z**2) < 4e-3
-        info['is_success'] = done
-        info['grasped'] = grasped
+        info['is_success'] = int(done)
+        info['grasped'] = int(grasped)
 
         if done:
             reward = 1000
