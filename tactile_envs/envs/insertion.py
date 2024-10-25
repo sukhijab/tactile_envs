@@ -475,7 +475,7 @@ class InsertionEnv(gym.Env):
         
         info = {'id': np.array([self.id]),
                 'is_success': int(False),
-                'grasped': int(self.grasp_object),
+                'grasped': int(self.verify_grasp()),
                 }
 
         return self._get_obs(), info
