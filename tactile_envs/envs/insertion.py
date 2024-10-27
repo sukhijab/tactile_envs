@@ -34,7 +34,9 @@ class InsertionEnv(gym.Env):
         compress_img: bool = True,
         num_init_grasp_steps: int = 0,
         objects = ["square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus"],
-        holders = ["holder1", "holder2", "holder3"]):
+        holders = ["holder1", "holder2", "holder3"],
+        initialize_assets: bool = False,
+        ):
 
         """
         'no_rotation': if True, the robot will not be able to rotate its wrist
@@ -67,10 +69,11 @@ class InsertionEnv(gym.Env):
         # Change the working directory to 'tactile_envs'
         os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
         # Define the command and arguments
-        command = f'python tactile_envs/assets/insertion/generate_pad_collisions.py --nx {tactile_shape[0]} ' \
-              f'--ny {tactile_shape[1]}'
-        # Run the command
-        result = os.system(command)
+        if initialize_assets:
+            command = f'python tactile_envs/assets/insertion/generate_pad_collisions.py --nx {tactile_shape[0]} ' \
+                  f'--ny {tactile_shape[1]}'
+            # Run the command
+            result = os.system(command)
         # Change the working directory back to the original one
         os.chdir(original_dir)
 
