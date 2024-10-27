@@ -70,6 +70,7 @@ class InsertionEnv(gym.Env):
         os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
         # Define the command and arguments
         if initialize_assets:
+            print('Initializing assets')
             command = f'python tactile_envs/assets/insertion/generate_pad_collisions.py --nx {tactile_shape[0]} ' \
                   f'--ny {tactile_shape[1]}'
             # Run the command
