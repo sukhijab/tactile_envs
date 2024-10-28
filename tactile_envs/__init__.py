@@ -6,3 +6,9 @@ register(
      entry_point="tactile_envs.envs:InsertionEnv",
      max_episode_steps=300,
 )
+
+register(
+     id="tactile_envs/Exploration-v0",
+     entry_point="tactile_envs.envs:ExplorationEnv",
+     max_episode_steps=300,
+)

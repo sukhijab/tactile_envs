@@ -1,1 +1,2 @@
 from tactile_envs.envs.insertion import InsertionEnv
+from tactile_envs.envs.exploration import ExplorationEnv

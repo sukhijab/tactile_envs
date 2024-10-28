@@ -26,16 +26,15 @@ def convert_observation_to_space(observation, compress_img: bool = False):
     return space
 
 
-class InsertionEnv(gym.Env):
+class ExplorationEnv(gym.Env):
 
     def __init__(self, no_rotation=True, 
         no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True,
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
         num_init_grasp_steps: int = 0,
-        objects = ["square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus"],
-        holders = ["holder1", "holder2", "holder3"],
         initialize_assets: bool = False,
+        multi_obj: bool = False,
         ):
 
         """
@@ -54,7 +53,7 @@ class InsertionEnv(gym.Env):
         'holders': list of holders to insert the objects (list from "holder1", "holder2", "holder3")
         """
 
-        super(InsertionEnv, self).__init__()
+        super(ExplorationEnv, self).__init__()
 
         self.id = env_id
 
@@ -71,15 +70,19 @@ class InsertionEnv(gym.Env):
         # Define the command and arguments
         if initialize_assets:
             print('Initializing assets')
-            command = f'python tactile_envs/assets/insertion/generate_pad_collisions.py --nx {tactile_shape[0]} ' \
+            command = f'python tactile_envs/assets/exploration/generate_pad_collisions.py --nx {tactile_shape[0]} ' \
                   f'--ny {tactile_shape[1]}'
             # Run the command
             result = os.system(command)
         # Change the working directory back to the original one
         os.chdir(original_dir)
 
-        self.model_path = os.path.join(asset_folder, 'insertion/scene.xml')
-        self.current_dir = os.path.join(Path(__file__).parent.parent.absolute(), 'assets/insertion')
+        if multi_obj:
+            self.model_path = os.path.join(asset_folder, 'exploration/scene_multi.xml')
+        else:
+            self.model_path = os.path.join(asset_folder, 'exploration/scene_single.xml')
+        self.multi_obj = multi_obj
+        self.current_dir = os.path.join(Path(__file__).parent.parent.absolute(), 'assets/exploration')
         with open(self.model_path,"r") as f:
             self.xml_content = f.read()
         self.update_include_path()
@@ -100,9 +103,6 @@ class InsertionEnv(gym.Env):
         self.im_size = im_size
 
         self.state_type = state_type
-
-        self.holders = holders
-        self.objects = objects
 
         print("state_type: ", self.state_type)
 
@@ -129,8 +129,6 @@ class InsertionEnv(gym.Env):
         self.mj_data = mujoco.MjData(self.sim)
         if self.multiccd:
             self.sim.opt.enableflags |= mujoco.mjtEnableBit.mjENBL_MULTICCD
-
-
 
         self.init_z = self.mj_data.qpos[-5]
 
@@ -203,109 +201,15 @@ class InsertionEnv(gym.Env):
             else:
                 return True
 
-    def edit_xml(self):
-        
-        holders = self.holders
-        objects = self.objects
-
-        self.xml_content = self.xml_content_reference
-
-        def edit_attribute(attribute, offset_x, offset_y, offset_yaw, holder, object):
-            box_idx = self.xml_content.find('<body name="' + attribute + '"')
-            if box_idx == -1:
-                 print("ERROR: Could not find joint name: " + attribute)
-                 return False
-            
-            pos_key = 'pos="'
-            pos_idx = box_idx + self.xml_content[box_idx:].find(pos_key)
-            pos_start_idx = pos_idx + len(pos_key)
-            pos_end_idx = pos_start_idx + self.xml_content[pos_start_idx:].find('"')
-
-            pos = self.xml_content[pos_start_idx:pos_end_idx].split(" ")
-            correction_rot = np.array([float(pos[0]), float(pos[1])])
-            rotMatrix = np.array([[np.cos(offset_yaw), -np.sin(offset_yaw)], 
-                         [np.sin(offset_yaw),  np.cos(offset_yaw)]])
-            correction_rot = rotMatrix.dot(correction_rot)
-            
-            new_pos = [str(offset_x + correction_rot[0]), str(offset_y + correction_rot[1]), str(float(pos[2]))]
-            new_pos_str = " ".join(new_pos)
-            
-            self.xml_content = self.xml_content[:pos_start_idx] + new_pos_str + self.xml_content[pos_end_idx:]
-
-            euler_key = 'axisangle="'
-            euler_idx = box_idx + self.xml_content[box_idx:].find(euler_key)
-            euler_start_idx = euler_idx + len(euler_key)
-            euler_end_idx = euler_start_idx + self.xml_content[euler_start_idx:].find('"')
-
-            euler = self.xml_content[euler_start_idx:euler_end_idx].split(" ")
-            new_euler = [str(float(euler[0])), str(float(euler[1])), str(float(euler[2])), str(float(euler[3]) + offset_yaw)]
-            new_euler_str = " ".join(new_euler)
-            
-            self.xml_content = self.xml_content[:euler_start_idx] + new_euler_str + self.xml_content[euler_end_idx:]
-            
-            if attribute == 'object':
-                for key in ['peg_visual', 'peg_collision']:
-                    key_idx = euler_end_idx + self.xml_content[euler_end_idx:].find('name="' + key + '"')
-                    key_end_idx = key_idx + len('name="' + key + '"')
-            
-                    mesh_idx = key_end_idx + self.xml_content[key_end_idx:].find('mesh="')
-                    mesh_start_idx = mesh_idx + len('mesh="')
-                    mesh_end_idx = mesh_start_idx + self.xml_content[mesh_start_idx:].find('"')
-
-                    self.xml_content = self.xml_content[:mesh_start_idx] + object + self.xml_content[mesh_end_idx:]
-
-                for key in ['holder_visual', 'holder_collision']:
-                    key_idx = euler_end_idx + self.xml_content[euler_end_idx:].find('name="' + key + '"')
-                    key_end_idx = key_idx + len('name="' + key + '"')
-                    
-                    mesh_idx = key_end_idx + self.xml_content[key_end_idx:].find('mesh="')
-                    mesh_start_idx = mesh_idx + len('mesh="')
-                    mesh_end_idx = mesh_start_idx + self.xml_content[mesh_start_idx:].find('"')
-
-                    self.xml_content = self.xml_content[:mesh_start_idx] + holder + self.xml_content[mesh_end_idx:]
-                    
-            else:
-                for i in range(1,5):
-                    for key in ['wall{}_visual'.format(i), 'wall{}_collision'.format(i)]:
-                        key_idx = euler_end_idx + self.xml_content[euler_end_idx:].find('name="' + key + '"')
-                        key_end_idx = key_idx + len('name="' + key + '"')
-                    
-                        mesh_idx = key_end_idx + self.xml_content[key_end_idx:].find('mesh="')
-                        mesh_start_idx = mesh_idx + len('mesh="')
-                        mesh_end_idx = mesh_start_idx + self.xml_content[mesh_start_idx:].find('"')
-
-                        self.xml_content = self.xml_content[:mesh_start_idx] + object + '_wall' + str(i) + self.xml_content[mesh_end_idx:]
-                
-            return True
-            
-        offset_x = 0.05*np.random.rand()
-        offset_y = 0.05*np.random.rand()
-
-        if self.with_rotation:
-            offset_yaw = 2*np.pi*np.random.rand()-np.pi
-        else:
-            offset_yaw = 0.
-
-        holder = np.random.choice(holders)
-        object = np.random.choice(objects)
-
-        edit_attribute("object", offset_x, offset_y, offset_yaw, holder, object)
-        edit_attribute("walls", offset_x, offset_y, offset_yaw, holder, object)
-
-        self.offset_x = offset_x
-        self.offset_y = offset_y
-        self.offset_yaw = offset_yaw
-        self.target_quat = np.array([np.cos(offset_yaw/2), 0, 0, np.sin(offset_yaw/2)])
-
     def generate_initial_pose(self, show_full=False):
         
+        print("resetting initial pose")
         cruise_height = 0.
-        gripping_height = -0.11
         
         mujoco.mj_resetData(self.sim, self.mj_data)
 
-        rand_x = np.random.rand()*0.2 - 0.1
-        rand_y = np.random.rand()*0.2 - 0.1
+        rand_x = np.random.rand()*0.4 - 0.2
+        rand_y = np.random.rand()*0.4 - 0.2
         if self.with_rotation:
             rand_yaw = np.random.rand()*2*np.pi - np.pi
         else:
@@ -313,113 +217,59 @@ class InsertionEnv(gym.Env):
 
         steps_per_phase = 60
 
-        for i in range(steps_per_phase): # go on top of object
-            self.mj_data.ctrl[:3] = [self.offset_x, self.offset_y, cruise_height]
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
+        placed_coords = np.empty((0,2))
 
-        for i in range(steps_per_phase): # rotate wrist
-            self.mj_data.ctrl[3] = -np.arcsin(self.target_quat[-1])*2
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
-            
-        for i in range(steps_per_phase): # move around object
-            self.mj_data.ctrl[:3] = [self.offset_x, self.offset_y, gripping_height]
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
-            
-        for i in range(steps_per_phase): # close gripper
-            self.mj_data.ctrl[-1] = self.fixed_gripping
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
-            
-        for i in range(steps_per_phase): # lift object
-            self.mj_data.ctrl[:3] = [self.offset_x, self.offset_y, cruise_height]
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
+        if self.grasp_object:
+            mujoco.mj_resetDataKeyframe(self.sim, self.mj_data, 0)
 
-        
-        for i in range(steps_per_phase): # rotate in place
-            self.mj_data.ctrl[3] = -rand_yaw
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
-            
-        for i in range(steps_per_phase): # move to random position
-            self.mj_data.ctrl[:3] = [rand_x, rand_y, cruise_height]
-            mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-            if show_full:
-                self.renderer.update_scene(self.mj_data, camera=0)
-                img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
-
-        self.prev_action_xyz = np.array([rand_x, rand_y, cruise_height])
-
-        pos = self.mj_data.qpos[-7:-4]
-        
-        if pos[2] < (cruise_height - gripping_height)/2:
-            print('Failed to grasp')
-
-        if not self.grasp_object:
-            for i in range(steps_per_phase):  # go down
-                self.mj_data.ctrl[:3] = [rand_x, rand_y, gripping_height]
-                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+            for i in range(steps_per_phase): # rotate in place
+                self.mj_data.ctrl[3] = -rand_yaw
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
                 if show_full:
                     self.renderer.update_scene(self.mj_data, camera=0)
                     img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
                     cv2.imshow('img', img)
                     cv2.waitKey(1)
-
-            for i in range(steps_per_phase):  # open gripper
-                self.mj_data.ctrl[-1] = 0
-                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
-                if show_full:
-                    self.renderer.update_scene(self.mj_data, camera=0)
-                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                    cv2.imshow('img', img)
-                    cv2.waitKey(1)
-
-            for i in range(steps_per_phase):  # move up
+                
+            for i in range(steps_per_phase): # move to random position
                 self.mj_data.ctrl[:3] = [rand_x, rand_y, cruise_height]
-                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
+                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
                 if show_full:
                     self.renderer.update_scene(self.mj_data, camera=0)
                     img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
                     cv2.imshow('img', img)
                     cv2.waitKey(1)
+        else:
+            self.mj_data.joint('object1_jnt').qpos[0:2] = [rand_x, rand_y]
+            self.mj_data.joint('object1_jnt').qpos[3:7] = [np.cos(rand_yaw/2), 0, 0, np.sin(rand_yaw/2)]
+            placed_coords = np.vstack((placed_coords, np.array([rand_x, rand_y])))
 
-            for i in range(steps_per_phase):  # move to zero
-                self.mj_data.ctrl[:3] = [0, 0, cruise_height]
-                mujoco.mj_step(self.sim, self.mj_data, self.skip_frame + 1)
-                if show_full:
-                    self.renderer.update_scene(self.mj_data, camera=0)
-                    img = cv2.cvtColor(self.renderer.render(), cv2.COLOR_BGR2RGB)
-                    cv2.imshow('img', img)
-                    cv2.waitKey(1)
+        if self.multi_obj:
+            for i in range(2, 8):
+                dist = 0
+                attempt = 0
+                while dist < 0.075:
+                    rand_x = np.random.rand()*0.4 - 0.2
+                    rand_y = np.random.rand()*0.4 - 0.2
+                    if self.with_rotation:
+                        rand_yaw = np.random.rand()*2*np.pi - np.pi
+                    else:
+                        rand_yaw = 0
+                    point = np.array([rand_x, rand_y])
+                    if len(placed_coords) == 0:
+                        break
+                    dist = np.min(np.linalg.norm(placed_coords - point, axis=1))
+                    attempt += 1
+                    if attempt > 20:
+                        print("Too many attempts to place object")
+                        break
+                self.mj_data.joint(f'object{i}_jnt').qpos[0:2] = point
+                self.mj_data.joint(f'object{i}_jnt').qpos[3:7] = [np.cos(rand_yaw/2), 0, 0, np.sin(rand_yaw/2)]
+                placed_coords = np.vstack((placed_coords, point))
+        
+        self.prev_action_xyz = self.mj_data.ctrl[:3].copy()
+
+        mujoco.mj_forward(self.sim, self.mj_data)
 
     def _get_obs(self):
         return self.curr_obs
@@ -436,11 +286,11 @@ class InsertionEnv(gym.Env):
     
     def reset(self, seed=None, options=None):
 
+        print("resetting environment")
+
         if seed is not None:
             np.random.seed(seed)
         
-        # Reload XML (and update robot)
-        self.edit_xml()
         self.sim = self.from_xml_string()
         
         self.mj_data = mujoco.MjData(self.sim)
@@ -479,7 +329,7 @@ class InsertionEnv(gym.Env):
         
         info = {'id': np.array([self.id]),
                 'is_success': int(False),
-                'grasped': int(self.verify_grasp()),
+                'grasped': self.verify_grasp(),
                 }
 
         return self._get_obs(), info
@@ -529,15 +379,7 @@ class InsertionEnv(gym.Env):
 
         mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
 
-        pos = self.mj_data.qpos[-7:-4]
-        quat = self.mj_data.qpos[-4:]
-        
-        delta_x = pos[0] - self.offset_x
-        delta_y = pos[1] - self.offset_y
-        delta_z = pos[2] - self.init_z
-        delta_quat = np.linalg.norm(quat - self.target_quat)
-
-        reward = - np.log(100*np.sqrt(delta_x**2 + delta_y**2 + delta_z**2 + int(self.with_rotation)*delta_quat**2) + 1)
+        reward = 0
         
         if self.state_type == 'vision_and_touch': 
             tactiles_right = self.mj_data.sensor('touch_right').data.reshape((3, self.tactile_rows, self.tactile_cols))
@@ -568,9 +410,9 @@ class InsertionEnv(gym.Env):
             self.curr_obs = {'state': np.concatenate((self.mj_data.qpos.copy(), self.mj_data.qvel.copy(), [self.offset_x,self.offset_y,self.offset_yaw]))}
             info = {'id': np.array([self.id])}
 
-        done = np.sqrt(delta_x**2 + delta_y**2 + delta_z**2) < 4e-3
+        done = False
         info['is_success'] = int(done)
-        info['grasped'] = int(grasped)
+        info['grasped'] = grasped
 
         if done:
             reward = 1000
@@ -584,11 +426,11 @@ class InsertionEnv(gym.Env):
         for pair in self.mj_data.contact.geom:
             pair_0 = self.sim.geom(pair[0]).name
             pair_1 = self.sim.geom(pair[1]).name
-            if pair_0 in ["holder_collision", "peg_collision"] and (
+            if (pair_0.startswith("holder_collision") or pair_0.startswith("peg_collision")) and (
                     pair_1.startswith("lpad") or pair_1.startswith("rpad")):
                 grasped = True
                 break
-            elif pair_1 in ["holder_collision", "peg_collision"] and (
+            elif (pair_1.startswith("holder_collision") or pair_1.startswith("peg_collision")) and (
                     pair_0.startswith("lpad") or pair_0.startswith("rpad")):
                 grasped = True
                 break

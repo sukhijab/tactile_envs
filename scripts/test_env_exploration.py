@@ -38,7 +38,7 @@ if __name__ == "__main__":
     n_episodes = 10
     n_steps = 300
     
-    env = gym.make("tactile_envs/Insertion-v0", state_type='vision_and_touch', multiccd=False, im_size=64, no_gripping=True, no_rotation=True, tactile_shape=(32,32), max_delta=None, start_grasped=True)
+    env = gym.make("tactile_envs/Exploration-v0", state_type='vision_and_touch', multiccd=False, im_size=64, no_gripping=True, no_rotation=True, tactile_shape=(32,32), max_delta=None, start_grasped=True, multi_obj=False)
     
     for j in range(n_episodes):
         seed = np.random.randint(0,1000)
@@ -53,12 +53,12 @@ if __name__ == "__main__":
             obs, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
 
-            print("info grasped: ", info['grasped'])
-
             obs_tactile = obs['tactile'].transpose(2, 0, 1)
 
             img_tactile1 = show_tactile(obs_tactile[:3], name='tactile1')
             img_tactile2 = show_tactile(obs_tactile[3:], name='tactile2')
+
+            print("info grasped: ", info['grasped'])
 
             if show_highres:
                 img = env.unwrapped.render(highres=True)
