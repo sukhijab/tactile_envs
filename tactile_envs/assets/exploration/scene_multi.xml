@@ -73,6 +73,7 @@
   </default>
 
   <worldbody>
+    <camera pos="-0.244 -0.422 0.500" xyaxes="0.865 -0.502 0.000 0.340 0.587 0.735"/>
     <body name="base_mount" pos="0 0 0.3" zaxis="0 0 -1" childclass="2f85" gravcomp="1">
       <joint name="base_mount_joint_x" type="slide" pos="0 0 0.3" axis="1 0 0" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_y" type="slide" pos="0 0 0.3" axis="0 -1 0" damping="18" range="-1 1"/>
@@ -81,7 +82,7 @@
       <geom class="visual" mesh="base_mount" material="black"/>
       <geom class="collision" mesh="base_mount"/>
       <body name="base" pos="0 0 0.0038" quat="1 0 0 -1" gravcomp="1">
-        <camera pos="-0.15 -0.15 -0." mode="targetbody" target="right_pad"/>
+        <!-- <camera pos="-0.15 -0.15 -0." mode="targetbody" target="right_pad"/> -->
         <inertial mass="0.777441" pos="0 -2.70394e-05 0.0354675" quat="1 -0.00152849 0 0"
           diaginertia="0.000260285 0.000225381 0.000152708"/>
         <geom class="visual" mesh="base" material="black"/>
