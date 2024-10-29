@@ -413,10 +413,6 @@ class ExplorationEnv(gym.Env):
         done = False
         info['is_success'] = int(done)
         info['grasped'] = int(grasped)
-
-        if done:
-            reward = 1000
-
         obs = self._get_obs()
 
         return obs, reward, done, False, info
