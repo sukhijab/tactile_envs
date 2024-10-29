@@ -38,7 +38,9 @@ if __name__ == "__main__":
     n_episodes = 10
     n_steps = 300
     
-    env = gym.make("tactile_envs/Exploration-v0", state_type='vision_and_touch', multiccd=False, im_size=96, no_gripping=True, no_rotation=True, tactile_shape=(32,32), max_delta=None, start_grasped=True, multi_obj=True)
+    env = gym.make("tactile_envs/Exploration-v0", state_type='vision_and_touch',
+                   multiccd=False, im_size=96, no_gripping=True, no_rotation=True,
+                   tactile_shape=(32,32), max_delta=None, start_grasped=True, multi_obj=True)
     
     for j in range(n_episodes):
         seed = np.random.randint(0,1000)

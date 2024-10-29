@@ -329,7 +329,7 @@ class ExplorationEnv(gym.Env):
         
         info = {'id': np.array([self.id]),
                 'is_success': int(False),
-                'grasped': self.verify_grasp(),
+                'grasped': int(self.verify_grasp()),
                 }
 
         return self._get_obs(), info
@@ -412,7 +412,7 @@ class ExplorationEnv(gym.Env):
 
         done = False
         info['is_success'] = int(done)
-        info['grasped'] = grasped
+        info['grasped'] = int(grasped)
 
         if done:
             reward = 1000
