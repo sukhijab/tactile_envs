@@ -1,2 +1,3 @@
 from tactile_envs.envs.insertion import InsertionEnv
 from tactile_envs.envs.exploration import ExplorationEnv
+from tactile_envs.envs.hand_exploration import HandExplorationEnv

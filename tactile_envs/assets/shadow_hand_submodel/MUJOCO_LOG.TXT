@@ -1,0 +1,6 @@
+Tue Oct  8 10:26:59 2024
+WARNING: mju_openResource: unknown file '../shadow_hand_submodel/left_palm_collision_0.xml'
+
+Tue Oct  8 11:14:43 2024
+WARNING: mju_openResource: unknown file '../shadow_hand_submodel/touch_sensors.xml'
+
