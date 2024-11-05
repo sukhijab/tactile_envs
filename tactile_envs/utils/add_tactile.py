@@ -97,6 +97,6 @@ class AddTactile(gym.ObservationWrapper):
 
         if self.use_symlog:
             tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
-        observation['tactile'] = tactiles
+        observation['tactile'] = tactiles.astype(np.float32)
         
         return observation
