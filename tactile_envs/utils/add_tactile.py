@@ -10,11 +10,14 @@ from gymnasium.spaces import Box, Dict
 
 class AddTactile(gym.ObservationWrapper):
    
-    def __init__(self, env: gym.Env, use_symlog: bool = True) -> None:
+    def __init__(self, env: gym.Env, use_symlog: bool = True, flatten_obs: bool = True) -> None:
    
         gym.ObservationWrapper.__init__(self, env)
-
-        self.obs_shape = (3, 8 * 16)
+        self.flatten_obs = flatten_obs
+        if flatten_obs:
+            self.obs_shape = (3 * 8 * 16, )
+        else:
+            self.obs_shape = (3, 8 * 16)
 
         self.use_symlog = use_symlog
 
@@ -88,6 +91,9 @@ class AddTactile(gym.ObservationWrapper):
                                    lh_rfproximal_touch, lh_rfmiddle_touch, lh_rfdistal_touch,
                                    lh_lfmetacarpal_touch, lh_lfproximal_touch, lh_lfmiddle_touch, lh_lfdistal_touch,
                                    lh_thproximal_touch, lh_thmiddle_touch, lh_thdistal_touch), axis=1)
+
+        if self.flatten_obs:
+            tactiles = tactiles.reshape(-1)
 
         if self.use_symlog:
             tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
