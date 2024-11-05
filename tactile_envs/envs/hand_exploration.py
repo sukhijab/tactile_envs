@@ -124,7 +124,9 @@ class HandExplorationEnv(gym.Env):
 
         print("ndof_u: ", self.ndof_u)
         
-        self.action_space = spaces.Box(low = np.full(self.ndof_u, -1.), high = np.full(self.ndof_u, 1.), dtype = np.float32)
+        self.action_space = spaces.Box(low=np.full(self.ndof_u, -1., dtype=np.float32),
+                                       high=np.full(self.ndof_u, 1., dtype=np.float32),
+                                       dtype = np.float32)
         # self.action_scale = np.array([[-0.2,0.2],[-0.2,0.2],[-0.12,0.3],[-np.pi,np.pi],[0,220]])
         self.action_scale = self.sim.actuator_ctrlrange.copy()
 
