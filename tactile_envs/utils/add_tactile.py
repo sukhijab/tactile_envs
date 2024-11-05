@@ -15,9 +15,9 @@ class AddTactile(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.flatten_obs = flatten_obs
         if flatten_obs:
-            self.obs_shape = (3 * 8 * 16, )
+            self.obs_shape = (3 * 8 * 17, )
         else:
-            self.obs_shape = (3, 8 * 16)
+            self.obs_shape = (3, 8 * 17)
 
         self.use_symlog = use_symlog
 
