@@ -135,8 +135,6 @@ class HandExplorationEnv(gym.Env):
         self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
 
     def from_xml_string(self):
-        # print("content: ", self.xml_content)
-        return mujoco.MjModel.from_xml_string(self.xml_content)
         timeout = 120
         start_time = time.time()
         while True:
