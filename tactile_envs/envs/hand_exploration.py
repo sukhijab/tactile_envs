@@ -127,6 +127,7 @@ class HandExplorationEnv(gym.Env):
         self.action_space = spaces.Box(low = np.full(self.ndof_u, -1.), high = np.full(self.ndof_u, 1.), dtype = np.float32)
         # self.action_scale = np.array([[-0.2,0.2],[-0.2,0.2],[-0.12,0.3],[-np.pi,np.pi],[0,220]])
         self.action_scale = self.sim.actuator_ctrlrange.copy()
+        print("action_scale: ", self.action_scale)
 
         # self.action_mask = np.ones(5, dtype=bool)
         
@@ -286,6 +287,8 @@ class HandExplorationEnv(gym.Env):
                 'grasped': int(self.verify_grasp()),
                 }
 
+        mujoco.mj_forward(self.sim, self.mj_data)
+
         return self._get_obs(), info
 
 
@@ -310,18 +313,20 @@ class HandExplorationEnv(gym.Env):
         self.num_env_steps += 1
         grasped = self.verify_grasp()
 
+        start_idx_act = 20
+
         action = u
         action = np.clip(u, -1., 1.)
         
         action_unnorm = (action + 1)/2 * (self.action_scale[:,1]-self.action_scale[:,0]) + self.action_scale[:,0]
 
         if self.max_delta is not None:
-            action_unnorm = np.clip(action_unnorm[:3], self.prev_action_xyz - self.max_delta, self.prev_action_xyz + self.max_delta)
+            action_unnorm[start_idx_act:start_idx_act+3] = np.clip(action_unnorm[start_idx_act:start_idx_act+3], self.prev_action_xyz - self.max_delta, self.prev_action_xyz + self.max_delta)
         
         self.prev_action_xyz = action_unnorm
-    
+
         self.mj_data.ctrl = action_unnorm
-        self.mj_data.ctrl[:3] = action_unnorm[:3]
+        self.mj_data.ctrl[start_idx_act:start_idx_act+3] = action_unnorm[start_idx_act:start_idx_act+3]
 
         mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
 
@@ -338,6 +343,7 @@ class HandExplorationEnv(gym.Env):
         done = False
         info['is_success'] = int(done)
         info['grasped'] = int(grasped)
+
         obs = self._get_obs()
 
         return obs, reward, done, False, info

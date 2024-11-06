@@ -28,9 +28,9 @@ class AddTactile(gym.ObservationWrapper):
             dtype=np.float32,
         )
 
-        self.mj_data = self.env.unwrapped.mj_data
-
     def observation(self, observation):
+
+        self.mj_data = self.env.unwrapped.mj_data
         
         lh_palm_touch = self.mj_data.sensor('lh_palm_touch').data.reshape((3, 8)) # 3 x nx*ny
         lh_palm_touch = lh_palm_touch[[1, 2, 0]] # zxy -> xyz

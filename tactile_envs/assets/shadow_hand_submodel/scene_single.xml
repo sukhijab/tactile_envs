@@ -69,14 +69,14 @@
 
   <include file="touch_sensors_left.xml"/>
 
-  <!-- <actuator>
-    <position name="base_actuator_x" joint="base_mount_joint_x" ctrlrange="-1 1" kp="100"/>
-    <position name="base_actuator_y" joint="base_mount_joint_y" ctrlrange="-1 1" kp="100"/>
-    <position name="base_actuator_z" joint="base_mount_joint_z" ctrlrange="-1 1" kp="100"/>
+  <actuator>
+    <position name="base_actuator_x" joint="base_mount_joint_x" ctrlrange="-0.1 0.1" kp="100"/>
+    <position name="base_actuator_y" joint="base_mount_joint_y" ctrlrange="-0.1 0.1" kp="100"/>
+    <position name="base_actuator_z" joint="base_mount_joint_z" ctrlrange="-0.2 0.2" kp="100"/>
     <position name="base_actuator_roll" joint="base_mount_joint_roll" kp="0.5" ctrlrange="-3.14159 3.14159"/>
     <position name="base_actuator_pitch" joint="base_mount_joint_pitch" kp="0.5" ctrlrange="-3.14159 3.14159"/>
     <position name="base_actuator_yaw" joint="base_mount_joint_yaw" kp="0.5" ctrlrange="-3.14159 3.14159"/>
-  </actuator> -->
+  </actuator>
 
   <!-- <keyframe> -->
   <!-- <key qpos='-7.86383e-11 -0.0578754 -6.54631e-12 1.3709 1.57142 0.740898 0.0322576 1.52817 1.1948 0.700181 0.000583132 1.30642 0.896499 1.57071 0.0158451 0.0266254 1.23092 1.21065 0.969971 -2.14863e-05 -0.00170927 -0.0217442 0.000297012 9.91919e-05 0.291054 -0.0171072 0.0395094 -0.902257 0.0576427 -0.0828494 0.419221'/> -->

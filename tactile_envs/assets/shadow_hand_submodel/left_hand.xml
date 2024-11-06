@@ -105,9 +105,9 @@
 
   <worldbody>
     <body name="lh_forearm" childclass="left_hand" quat="1 1 1 1" pos="-0.3 0 0.2" gravcomp="1">
-      <joint name="base_mount_joint_x" type="slide" axis="-1 0 0" damping="50" range="-1 1"/>
-      <joint name="base_mount_joint_y" type="slide" axis="0 0 1" damping="50" range="-1 1"/>
-      <joint name="base_mount_joint_z" type="slide" axis="0 1 0" damping="50" range="-1 1"/>
+      <joint name="base_mount_joint_x" type="slide" axis="-1 0 0" damping="50" range="-0.1 0.1"/>
+      <joint name="base_mount_joint_y" type="slide" axis="0 0 1" damping="50" range="-0.1 0.1"/>
+      <joint name="base_mount_joint_z" type="slide" axis="0 1 0" damping="50" range="-0.2 0.2"/>
       <joint name="base_mount_joint_roll" type="hinge" axis="1 0 0" damping="0.5" range="-3.14159 3.14159"/>
       <joint name="base_mount_joint_pitch" type="hinge" axis="0 0 1" damping="0.5" range="-3.14159 3.14159"/>
       <joint name="base_mount_joint_yaw" type="hinge" axis="0 1 0" damping="0.5" range="-3.14159 3.14159"/>

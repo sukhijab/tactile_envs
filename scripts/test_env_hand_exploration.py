@@ -60,7 +60,7 @@ if __name__ == "__main__":
             obs, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
 
-            print("tactile shape: ", obs['tactile'].shape)
+            # print("tactile shape: ", obs['tactile'].shape)
 
             # obs_tactile = obs['tactile'].transpose(2, 0, 1)
 
