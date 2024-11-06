@@ -124,7 +124,9 @@ class HandExplorationEnv(gym.Env):
 
         print("ndof_u: ", self.ndof_u)
         
-        self.action_space = spaces.Box(low = np.full(self.ndof_u, -1.), high = np.full(self.ndof_u, 1.), dtype = np.float32)
+        self.action_space = spaces.Box(low=np.full(self.ndof_u, -1., dtype=np.float32),
+                                       high=np.full(self.ndof_u, 1., dtype=np.float32),
+                                       dtype = np.float32)
         # self.action_scale = np.array([[-0.2,0.2],[-0.2,0.2],[-0.12,0.3],[-np.pi,np.pi],[0,220]])
         self.action_scale = self.sim.actuator_ctrlrange.copy()
         print("action_scale: ", self.action_scale)
@@ -136,8 +138,6 @@ class HandExplorationEnv(gym.Env):
         self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
 
     def from_xml_string(self):
-        # print("content: ", self.xml_content)
-        return mujoco.MjModel.from_xml_string(self.xml_content)
         timeout = 120
         start_time = time.time()
         while True:

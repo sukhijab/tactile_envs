@@ -49,7 +49,7 @@
   </asset>
 
   <worldbody>
-    <camera pos="-0.119 -0.187 0.274" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/>
+    <camera pos="-0.244 -0.422 0.500" xyaxes="0.865 -0.502 0.000 0.340 0.587 0.735"/>
     <light pos="0 0 1"/>
     <light pos="0.3 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" pos="0 0 0" size="0 0 0.05" type="plane" material="groundplane"/>
