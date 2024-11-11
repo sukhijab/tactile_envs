@@ -32,6 +32,7 @@ class HandExplorationEnv(gym.Env):
         env_id = -1, im_size=64, skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
         num_init_grasp_steps: int = 0,
+        return_grasp_flag_as_reward: bool = False,
         initialize_assets: bool = False,
         multi_obj: bool = False,
         ):
@@ -136,6 +137,7 @@ class HandExplorationEnv(gym.Env):
         # self.action_scale = self.action_scale[self.action_mask]
         
         self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
+        self.return_grasp_flag_as_reward = return_grasp_flag_as_reward
 
     def from_xml_string(self):
         timeout = 120
@@ -329,8 +331,6 @@ class HandExplorationEnv(gym.Env):
         self.mj_data.ctrl[start_idx_act:start_idx_act+3] = action_unnorm[start_idx_act:start_idx_act+3]
 
         mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-
-        reward = 0
         
         if self.state_type == 'vision':
             img = self.render()
@@ -345,6 +345,8 @@ class HandExplorationEnv(gym.Env):
         info['grasped'] = int(grasped)
 
         obs = self._get_obs()
+
+        reward = float(grasped) if self.return_grasp_flag_as_reward else 0.0
 
         return obs, reward, done, False, info
 

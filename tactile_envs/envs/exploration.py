@@ -35,6 +35,7 @@ class ExplorationEnv(gym.Env):
         num_init_grasp_steps: int = 0,
         initialize_assets: bool = False,
         multi_obj: bool = False,
+        return_grasp_flag_as_reward: bool = False,
         ):
 
         """
@@ -162,6 +163,7 @@ class ExplorationEnv(gym.Env):
         self.action_scale = self.action_scale[self.action_mask]
         
         self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
+        self.return_grasp_flag_as_reward = return_grasp_flag_as_reward
 
     def from_xml_string(self):
         timeout = 120
@@ -378,8 +380,6 @@ class ExplorationEnv(gym.Env):
         self.mj_data.ctrl[:3] = action_unnorm[:3]
 
         mujoco.mj_step(self.sim, self.mj_data, self.skip_frame+1)
-
-        reward = 0
         
         if self.state_type == 'vision_and_touch': 
             tactiles_right = self.mj_data.sensor('touch_right').data.reshape((3, self.tactile_rows, self.tactile_cols))
@@ -414,6 +414,8 @@ class ExplorationEnv(gym.Env):
         info['is_success'] = int(done)
         info['grasped'] = int(grasped)
         obs = self._get_obs()
+
+        reward = float(grasped) if self.return_grasp_flag_as_reward else 0.0
 
         return obs, reward, done, False, info
 
