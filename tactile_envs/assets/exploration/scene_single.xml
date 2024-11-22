@@ -73,11 +73,14 @@
   </default>
 
   <worldbody>
+    <camera pos="-0.119 -0.187 0.274" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/>
     <body name="base_mount" pos="0 0 0.3" zaxis="0 0 -1" childclass="2f85" gravcomp="1">
       <joint name="base_mount_joint_x" type="slide" pos="0 0 0.3" axis="1 0 0" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_y" type="slide" pos="0 0 0.3" axis="0 -1 0" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_z" type="slide" pos="0 0 0.3" axis="0 0 -1" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_yaw" type="hinge" pos="0 0 0.3" axis="0 0 1" damping="0.05" range="-3.14159 3.14159"/>
+      <!-- <site name="base_mount" pos="0 0.05 0.04" size="0.005" rgba="0.9 0.9 0.9 1"/> -->
+      <camera pos="0.0 0.05 0.04" zaxis="0 0.2 -0.8"/>
       <geom class="visual" mesh="base_mount" material="black"/>
       <geom class="collision" mesh="base_mount"/>
       <body name="base" pos="0 0 0.0038" quat="1 0 0 -1" gravcomp="1">
@@ -246,10 +249,10 @@
   <worldbody>
     <light pos="0 0 1"/>
     <light pos="0 -0.2 1" dir="0 0.2 -0.8" directional="true"/>
-    <camera pos="-0.119 -0.187 0.274" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/>
-    <camera pos="-0.352 -0.497 0.660" xyaxes="0.816 -0.578 -0.000 0.409 0.578 0.707"/>
+    <!-- <camera pos="-0.119 -0.187 0.274" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/> -->
+    <!-- <camera pos="-0.352 -0.497 0.660" xyaxes="0.816 -0.578 -0.000 0.409 0.578 0.707"/>
     <camera pos="0.0 0.0 0.9" xyaxes="1.000 0 -0.000 0.00 1.000 0.00"/>
-    <camera pos="0.0 0.0 0.5" xyaxes="1.000 0 -0.000 0.00 1.000 0.00"/>
+    <camera pos="0.0 0.0 0.5" xyaxes="1.000 0 -0.000 0.00 1.000 0.00"/> -->
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
     <body name="object1" pos="0. 0 0." axisangle="0 0 1 0.0">
       <joint type="free" name="object1_jnt"/>

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     
     env = gym.make("tactile_envs/Exploration-v0", state_type='vision_and_touch',
                    multiccd=False, im_size=96, no_gripping=True, no_rotation=True,
-                   tactile_shape=(32,32), max_delta=None, start_grasped=True, multi_obj=True)
+                   tactile_shape=(32,32), max_delta=None, start_grasped=True, multi_obj=False)
     
     for j in range(n_episodes):
         seed = np.random.randint(0,1000)
@@ -62,11 +62,14 @@ if __name__ == "__main__":
 
             print("info grasped: ", info['grasped'])
 
+            print("obs image shape: ", obs['image'].shape)
+
             if show_highres:
                 img = env.unwrapped.render(highres=True)
                 cv2.imshow('img', img[:,:,::-1])
             else:
-                cv2.imshow('img', obs['image'][:,:,::-1])
+                img = env.render()
+                cv2.imshow('img', img[:,:,::-1])
             cv2.waitKey(1)
             
             if done == True:

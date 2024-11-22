@@ -29,7 +29,7 @@ def convert_observation_to_space(observation, compress_img: bool = False):
 class ExplorationEnv(gym.Env):
 
     def __init__(self, no_rotation=True, 
-        no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=0, symlog_tactile=True,
+        no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=[0,1], symlog_tactile=True,
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
         num_init_grasp_steps: int = 0,
@@ -103,6 +103,10 @@ class ExplorationEnv(gym.Env):
 
         self.im_size = im_size
 
+        self.camera_idx = camera_idx
+        if isinstance(self.camera_idx, int):
+            self.camera_idx = [self.camera_idx]   
+        
         self.state_type = state_type
 
         print("state_type: ", self.state_type)
@@ -111,17 +115,17 @@ class ExplorationEnv(gym.Env):
             self.curr_obs = {'state': np.zeros(40)}
         elif self.state_type == 'vision':
             if self.compress_img:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3), dtype=np.uint8)}
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3*len(self.camera_idx)), dtype=np.uint8)}
             else:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3))}
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3*len(self.camera_idx)))}
         elif self.state_type == 'touch':
             self.curr_obs = {'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
         elif self.state_type == 'vision_and_touch':
             if self.compress_img:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3), dtype=np.uint8),
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3*len(self.camera_idx)), dtype=np.uint8),
                 'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
             else:
-                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3)), 
+                self.curr_obs = {'image': np.zeros((self.im_size, self.im_size, 3*len(self.camera_idx))), 
                 'tactile': np.zeros((self.tactile_rows, self.tactile_cols, 2 * self.tactile_comps))}
         else:
             raise ValueError("Invalid state type")
@@ -139,8 +143,6 @@ class ExplorationEnv(gym.Env):
         self.num_init_grasp_steps = num_init_grasp_steps
         self.num_env_steps = 0
 
-        self.camera_idx = camera_idx        
-        
         obs_tmp = self._get_obs()
         self.observation_space = convert_observation_to_space(obs_tmp, compress_img)
         
@@ -312,10 +314,10 @@ class ExplorationEnv(gym.Env):
             tactiles = np.concatenate((tactiles_right, tactiles_left), axis=0)
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
-            img = self.render()
+            img = self.render(render_all=True)
             self.curr_obs = {'image': img, 'tactile': np.moveaxis(tactiles, 0, -1)}
         elif self.state_type == 'vision':
-            img = self.render()
+            img = self.render(render_all=True)
             self.curr_obs = {'image': img}
         elif self.state_type == 'touch':
             tactiles_right = self.mj_data.sensor('touch_right').data.reshape((3, self.tactile_rows, self.tactile_cols))
@@ -337,18 +339,25 @@ class ExplorationEnv(gym.Env):
         return self._get_obs(), info
 
 
-    def render(self, highres = False):
+    def render(self, highres = False, render_all = False):
         
         if highres:
             del self.renderer
             self.renderer = mujoco.Renderer(self.sim, height=480, width=480)
-            self.renderer.update_scene(self.mj_data, camera=self.camera_idx)
+            self.renderer.update_scene(self.mj_data, camera=self.camera_idx[0])
             img = self.renderer.render() # /255
             del self.renderer
             self.renderer = mujoco.Renderer(self.sim, height=self.im_size, width=self.im_size)
         else:
-            self.renderer.update_scene(self.mj_data, camera=self.camera_idx)
-            img = self.renderer.render() #/255
+            if render_all:
+                imgs = []
+                for i in range(len(self.camera_idx)):
+                    self.renderer.update_scene(self.mj_data, camera=self.camera_idx[i])
+                    imgs.append(self.renderer.render())
+                img = np.concatenate(imgs, axis=2)
+            else:
+                self.renderer.update_scene(self.mj_data, camera=self.camera_idx[0])
+                img = self.renderer.render() #/255
         if self.compress_img:
             return img.astype(np.uint8)
         else:
@@ -389,11 +398,11 @@ class ExplorationEnv(gym.Env):
             tactiles = np.concatenate((tactiles_right, tactiles_left), axis=0)
             if self.symlog_tactile:
                 tactiles = np.sign(tactiles) * np.log(1 + np.abs(tactiles))
-            img = self.render()
+            img = self.render(render_all=True)
             self.curr_obs = {'image': img, 'tactile': np.moveaxis(tactiles, 0, -1)}
             info = {'id': np.array([self.id])}
         elif self.state_type == 'vision':
-            img = self.render()
+            img = self.render(render_all=True)
             self.curr_obs = {'image': img}
             info = {'id': np.array([self.id])}
         elif self.state_type == 'touch':

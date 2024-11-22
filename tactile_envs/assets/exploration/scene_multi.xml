@@ -79,6 +79,7 @@
       <joint name="base_mount_joint_y" type="slide" pos="0 0 0.3" axis="0 -1 0" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_z" type="slide" pos="0 0 0.3" axis="0 0 -1" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_yaw" type="hinge" pos="0 0 0.3" axis="0 0 1" damping="0.05" range="-3.14159 3.14159"/>
+      <camera pos="0.0 0.05 0.04" zaxis="0 0.2 -0.8"/>
       <geom class="visual" mesh="base_mount" material="black"/>
       <geom class="collision" mesh="base_mount"/>
       <body name="base" pos="0 0 0.0038" quat="1 0 0 -1" gravcomp="1">
