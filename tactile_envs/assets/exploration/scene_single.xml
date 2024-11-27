@@ -73,7 +73,7 @@
   </default>
 
   <worldbody>
-    <camera pos="-0.119 -0.187 0.274" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/>
+    <camera pos="-0.244 -0.422 0.500" xyaxes="0.853 -0.522 0.000 0.353 0.577 0.737"/>
     <body name="base_mount" pos="0 0 0.3" zaxis="0 0 -1" childclass="2f85" gravcomp="1">
       <joint name="base_mount_joint_x" type="slide" pos="0 0 0.3" axis="1 0 0" damping="18" range="-1 1"/>
       <joint name="base_mount_joint_y" type="slide" pos="0 0 0.3" axis="0 -1 0" damping="18" range="-1 1"/>
