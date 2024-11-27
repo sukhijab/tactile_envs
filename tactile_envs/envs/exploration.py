@@ -11,6 +11,8 @@ import cv2
 
 from pathlib import Path
 
+from tactile_envs.utils.rewards import tolerance
+
 def convert_observation_to_space(observation, compress_img: bool = False):
     
     space = spaces.Dict(spaces={})
@@ -29,13 +31,14 @@ def convert_observation_to_space(observation, compress_img: bool = False):
 class ExplorationEnv(gym.Env):
 
     def __init__(self, no_rotation=True, 
-        no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=[0,1], symlog_tactile=True,
+        no_gripping=True, start_grasped = True, state_type='vision_and_touch', camera_idx=[1], symlog_tactile=True,
         env_id = -1, im_size=64, tactile_shape=(32,32), skip_frame=10, max_delta=None, multiccd=False,
         compress_img: bool = True,
         num_init_grasp_steps: int = 0,
         initialize_assets: bool = False,
         multi_obj: bool = False,
         return_grasp_flag_as_reward: bool = False,
+        reward_type: str = 'grasped'
         ):
 
         """
@@ -52,6 +55,7 @@ class ExplorationEnv(gym.Env):
         'multiccd': if True, the multiccd flag will be enabled (makes tactile sensing more accurate but slower)
         'objects': list of objects to insert (list from "square", "triangle", "horizontal", "vertical", "trapezoidal", "rhombus")
         'holders': list of holders to insert the objects (list from "holder1", "holder2", "holder3")
+        'reward_type': choose from 'grasped', 'height'
         """
 
         super(ExplorationEnv, self).__init__()
@@ -61,7 +65,9 @@ class ExplorationEnv(gym.Env):
         self.compress_img = compress_img
 
         self.skip_frame = skip_frame
-        
+
+        self.reward_type = reward_type
+
         asset_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../assets')
 
         original_dir = os.getcwd()
@@ -92,6 +98,7 @@ class ExplorationEnv(gym.Env):
         self.multiccd = multiccd
 
         self.fixed_gripping = 200
+        self.des_height = 0.15
 
         self.max_delta = max_delta
 
@@ -424,7 +431,12 @@ class ExplorationEnv(gym.Env):
         info['grasped'] = int(grasped)
         obs = self._get_obs()
 
-        reward = float(grasped) if self.return_grasp_flag_as_reward else 0.0
+        if self.reward_type == 'height':
+            reward = tolerance(self.mj_data.joint('object1_jnt').qpos[2] - self.des_height, margin=self.des_height)
+        elif self.reward_type == 'grasped':
+            reward = float(grasped) if self.return_grasp_flag_as_reward else 0.0
+        else:
+            raise ValueError("Invalid reward type")
 
         return obs, reward, done, False, info
 
