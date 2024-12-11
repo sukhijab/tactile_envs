@@ -214,7 +214,7 @@ class ExplorationEnv(gym.Env):
 
     def generate_initial_pose(self, show_full=False):
         
-        print("resetting initial pose")
+        # print("resetting initial pose")
         cruise_height = 0.
         
         mujoco.mj_resetData(self.sim, self.mj_data)
@@ -297,7 +297,7 @@ class ExplorationEnv(gym.Env):
     
     def reset(self, seed=None, options=None):
 
-        print("resetting environment")
+        # print("resetting environment")
 
         if seed is not None:
             np.random.seed(seed)
